@@ -1,0 +1,89 @@
+.pxm {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.pxm-rounded .pxm-line:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+.pxm-rounded .pxm-last-line {
+  border-radius: 0 0 10px 10px;
+}
+
+.pxm-rounded .pxm-line:first-child .pxm-pixel:first-child {
+  border-radius: 10px 0 0 0;
+}
+
+.pxm-rounded .pxm-line:first-child .pxm-pixel:last-child {
+  border-radius: 0 10px 0 0;
+}
+
+.pxm-rounded .pxm-last-line .pxm-pixel:last-child {
+  border-radius: 0 0 10px 0;
+}
+
+.pxm-rounded .pxm-last-line .pxm-pixel:first-child {
+  border-radius: 0 0 0 10px;
+}
+
+.pxm-rounded.pxm-attached .pxm-line:first-child {
+  border-radius: 10px 0 0 0;
+}
+
+.pxm-rounded.pxm-attached .pxm-line:first-child .pxm-pixel:last-child {
+  border-radius: 0 0 0 0;
+}
+
+.pxm-rounded.pxm-attached .pxm-last-line {
+  border-radius: 0 0 0 10px;
+}
+
+.pxm-rounded.pxm-attached .pxm-last-line .pxm-pixel:last-child {
+  border-radius: 0 0 0 0;
+}
+
+.pxm-line {
+  display: flex;
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+}
+
+.pxm .pxm-last-line {
+  border-bottom: 1px solid #ddd;
+}
+
+.pxm-pixel {
+  border-right: 1px solid #ddd;
+  width: 25px;
+  height: 25px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.pxm-pixel:last-child {
+  border-right: none;
+}
+
+.pxm .pxm-bar {
+  transform: translateX(100%);
+}
+
+.pxm-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-left: none;
+}
+
+.pxm-rounded .pxm-bar {
+  border-radius: 0 10px 10px 0;
+}
