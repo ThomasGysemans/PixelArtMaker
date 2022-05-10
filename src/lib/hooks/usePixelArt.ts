@@ -46,7 +46,7 @@ const usePixelArt = (
   width = 16,
   height = 16,
   pxSize = 25,
-  initialColor = 0xffffff
+  initialColor = 0xffffffff
 ): PixelArtHook => {
   const [pixelArt, setPixelArt] = useState<PixelArt>(init(width, height, initialColor));
 

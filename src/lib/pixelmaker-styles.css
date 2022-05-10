@@ -28,22 +28,6 @@
   border-radius: 0 0 0 10px;
 }
 
-.pxm-rounded.pxm-attached .pxm-line:first-child {
-  border-radius: 10px 0 0 0;
-}
-
-.pxm-rounded.pxm-attached .pxm-line:first-child .pxm-pixel:last-child {
-  border-radius: 0 0 0 0;
-}
-
-.pxm-rounded.pxm-attached .pxm-last-line {
-  border-radius: 0 0 0 10px;
-}
-
-.pxm-rounded.pxm-attached .pxm-last-line .pxm-pixel:last-child {
-  border-radius: 0 0 0 0;
-}
-
 .pxm-line {
   display: flex;
   border-top: 1px solid #ddd;
@@ -67,23 +51,4 @@
 
 .pxm-pixel:last-child {
   border-right: none;
-}
-
-.pxm .pxm-bar {
-  transform: translateX(100%);
-}
-
-.pxm-bar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100px;
-  height: 100%;
-  box-sizing: border-box;
-  border: 1px solid #ddd;
-  border-left: none;
-}
-
-.pxm-rounded .pxm-bar {
-  border-radius: 0 10px 10px 0;
 }

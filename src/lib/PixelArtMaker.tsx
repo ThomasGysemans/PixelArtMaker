@@ -4,9 +4,7 @@ interface PixelArtProps {
   config: PixelArtConfig;
   grid: PixelArt;
   onClick: (data: PixelData) => void;
-  attachConfigBar?: boolean;
   roundedGrid?: boolean;
-  children?: React.ReactNode;
   className?: string;
 }
 
@@ -40,22 +38,14 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
   grid,
   onClick,
   roundedGrid = false,
-  attachConfigBar = false,
-  children,
   className,
 }) => {
   return (
     <div
       id={config.gridUID}
-      className={
-        "pxm " +
-        (roundedGrid ? "pxm-rounded " : "") +
-        (attachConfigBar ? "pxm-attached " : "") +
-        (className ?? "")
-      }
+      className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
     >
       {displayGrid(grid, onClick, config.pxSize)}
-      {children}
     </div>
   );
 };

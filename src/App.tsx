@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import usePixelArt from "./lib/hooks/usePixelArt";
-import PixelArtConfigBar from "./lib/PixelArtConfigBar";
 import PixelArtMaker from "./lib/PixelArtMaker";
 
 const App: React.FC = () => {
@@ -15,15 +14,7 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <PixelArtMaker
-        config={config}
-        attachConfigBar={true}
-        roundedGrid={true}
-        grid={pixelGrid}
-        onClick={onPixelClick}
-      >
-        <PixelArtConfigBar />
-      </PixelArtMaker>
+      <PixelArtMaker config={config} grid={pixelGrid} onClick={onPixelClick} />
     </div>
   );
 };
