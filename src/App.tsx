@@ -1,15 +1,16 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import usePixelArt from "./lib/hooks/usePixelArt";
 import PixelArtMaker from "./lib/PixelArtMaker";
 
 const App: React.FC = () => {
-  const [pixelGrid, config, paintPixel] = usePixelArt(16, 16, 25, 0xffffff);
+  const [pixelGrid, config, { paintPixel }] = usePixelArt(16, 16, 25, 0xffffff);
+  const [color] = useState<number>(0xff0000);
 
   const onPixelClick = useCallback(
     (data: PixelData) => {
-      paintPixel(data, 0xff0000);
+      paintPixel(data, color);
     },
-    [paintPixel]
+    [paintPixel, color]
   );
 
   return (

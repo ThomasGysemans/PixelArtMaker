@@ -16,7 +16,7 @@ interface Pos {
 interface PixelData {
   gridUID: string;
   pos: Pos;
-  hexColor: string;
+  hexColor?: string;
 }
 
 interface PixelProps {
