@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 interface PixelArtProps {
   config: PixelArtConfig;
@@ -52,6 +52,65 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
 
 const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick }) => {
   const hexc = "#" + color.toString(16);
+
+  useEffect(() => {
+    let mouseHold = false;
+    let heldTimeout: NodeJS.Timeout;
+    let drawnPixelsOnHold: PixelData[] = [];
+
+    const onMouseDown = () => {
+      heldTimeout = setTimeout(function () {
+        mouseHold = true;
+      }, 200);
+    };
+
+    const onMouseUp = () => {
+      clearTimeout(heldTimeout);
+      mouseHold = false;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (mouseHold) {
+        const target = e.target as HTMLElement;
+        if (target) {
+          if (target.classList.contains("pxm-pixel")) {
+            const pos = { x: parseInt(target.dataset.posx!), y: parseInt(target.dataset.posy!) };
+            const line = target.parentElement;
+            const grid = line?.parentElement;
+            if (grid && grid.classList.contains("pxm") && grid.hasAttribute("id")) {
+              const uid = grid.getAttribute("id")!;
+              const pixelData = { gridUID: uid, pos };
+              let alreadyDrawn = false;
+              for (let drawnPixel of drawnPixelsOnHold) {
+                if (
+                  drawnPixel.gridUID === uid &&
+                  drawnPixel.pos.x === pos.x &&
+                  drawnPixel.pos.y === pos.y
+                ) {
+                  alreadyDrawn = true;
+                  break;
+                }
+              }
+              if (!alreadyDrawn) {
+                onClick(pixelData);
+                drawnPixelsOnHold.push(pixelData);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mousemove", onMouseMove);
+
+    return () => {
+      window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
+    };
+  }, [onClick]);
 
   return (
     <div
