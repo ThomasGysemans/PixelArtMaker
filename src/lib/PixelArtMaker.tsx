@@ -1,17 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
+import type PixelArtRegistry from "./pixelArtRegistry";
 
 interface PixelArtProps {
   config: PixelArtConfig;
-  grid: PixelArt;
+  model: PixelArt;
   onClick: (data: PixelData) => void;
   roundedGrid?: boolean;
   className?: string;
+  registry?: PixelArtRegistry;
 }
 
 const displayGrid = (
   pixelArt: PixelArt,
+  pxSize: number,
   onClick: (data: PixelData) => void,
-  pxSize: number
+  onPixelDrawn: () => void
 ): React.ReactNode => {
   return pixelArt.grid.map((line, y) => (
     <div
@@ -24,9 +27,10 @@ const displayGrid = (
           y={y}
           gridUID={pixelArt.uid}
           size={pxSize}
-          onClick={onClick}
           color={cellColor}
           key={"cell-" + y + "-" + x}
+          onClick={onClick}
+          onPixelDrawn={onPixelDrawn}
         />
       ))}
     </div>
@@ -35,23 +39,19 @@ const displayGrid = (
 
 const PixelArtMaker: React.FC<PixelArtProps> = ({
   config,
-  grid,
+  model,
   onClick,
   roundedGrid = false,
   className,
+  registry,
 }) => {
-  return (
-    <div
-      id={config.gridUID}
-      className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
-    >
-      {displayGrid(grid, onClick, config.pxSize)}
-    </div>
-  );
-};
+  const onPixelDrawn = useCallback(() => {
+    registry?.registerState(model.grid, registry.ACTIONS.drawnPixel);
+  }, [model.grid, registry]);
 
-const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick }) => {
-  const hexc = "#" + color.toString(16);
+  const onPixelsDrawnOnMouseDown = useCallback(() => {
+    registry?.registerState(model.grid, registry.ACTIONS.multipleDrawnPixels);
+  }, [model.grid, registry]);
 
   useEffect(() => {
     let mouseHold = false;
@@ -66,7 +66,11 @@ const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick }) =>
 
     const onMouseUp = () => {
       clearTimeout(heldTimeout);
-      mouseHold = false;
+      if (mouseHold) {
+        mouseHold = false;
+        drawnPixelsOnHold = [];
+        onPixelsDrawnOnMouseDown();
+      }
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -110,7 +114,20 @@ const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick }) =>
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("mousemove", onMouseMove);
     };
-  }, [onClick]);
+  }, [onClick, onPixelsDrawnOnMouseDown]);
+
+  return (
+    <div
+      id={config.gridUID}
+      className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
+    >
+      {displayGrid(model, config.pxSize, onClick, onPixelDrawn)}
+    </div>
+  );
+};
+
+const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick, onPixelDrawn }) => {
+  const hexc = "#" + color.toString(16);
 
   return (
     <div
@@ -118,7 +135,10 @@ const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick }) =>
       data-posx={x}
       data-posy={y}
       data-hexc={hexc}
-      onClick={() => onClick({ pos: { x, y }, hexColor: hexc, gridUID })}
+      onClick={() => {
+        onClick({ pos: { x, y }, hexColor: hexc, gridUID });
+        onPixelDrawn();
+      }}
       style={{
         width: size.toString() + "px",
         height: size.toString() + "px",

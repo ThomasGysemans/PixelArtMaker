@@ -26,11 +26,17 @@ interface PixelProps {
   color: number; // hexadecimal
   gridUID: string;
   onClick: (data: PixelData) => void;
+  onPixelDrawn: () => void;
 }
 
 interface PixelArt {
   grid: Grid;
   uid: string;
+}
+
+interface RegistryState {
+  grid: Grid;
+  actionDescription: string;
 }
 
 type Grid = number[][];

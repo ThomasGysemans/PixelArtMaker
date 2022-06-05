@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import PixelArtRegistry from "../pixelArtRegistry";
 
 type PixelArtHook = [
   PixelArt,
@@ -9,6 +10,8 @@ type PixelArtHook = [
     fillLine: (color: number, line: number) => void;
     fillColumn: (color: number, column: number) => void;
     fillGrid: (color: number) => void;
+    applyGrid: (grid: Grid) => void;
+    registry: PixelArtRegistry;
   }
 ];
 
@@ -18,22 +21,30 @@ const getRandomInt = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min)) + min;
 };
 
-const RGBToHex = (rgb: string): number => {
+/**
+ * Converts RGB or RGBA into its hexadecimal value.
+ * @param {string} rgb The string in the RGB or RGBA format.
+ * @returns {number} The hexadecimal value as a number.
+ */
+export const RGBToHex = (rgb: string | number[]): number => {
   // Choose correct separator
-  rgb = rgb.trim();
-  const sep = rgb.indexOf(",") > -1 ? "," : " ";
-  const isRGBA = rgb.startsWith("rgba");
+  rgb = typeof rgb === "string" ? rgb.trim() : rgb;
+  const sep = typeof rgb === "string" ? (rgb.indexOf(",") > -1 ? "," : " ") : null;
+  const isRGBA = typeof rgb === "string" ? rgb.startsWith("rgba") : rgb.length === 4;
   // Turn "rgb(r,g,b)" into [r,g,b]
   // Turn "rgb(r,g,b,a)" into [r,g,b,a]
-  const sequences = rgb
-    .trim()
-    .substring(isRGBA ? 5 : 4)
-    .split(")")[0]
-    .split(sep);
+  const sequences =
+    typeof rgb === "string"
+      ? rgb
+          .trim()
+          .substring(isRGBA ? 5 : 4)
+          .split(")")[0]
+          .split(sep!)
+      : rgb;
 
-  let r = parseInt(sequences[0]).toString(16),
-    g = parseInt(sequences[1]).toString(16),
-    b = parseInt(sequences[2]).toString(16),
+  let r = parseInt(sequences[0] as string).toString(16),
+    g = parseInt(sequences[1] as string).toString(16),
+    b = parseInt(sequences[2] as string).toString(16),
     a = isRGBA ? Math.floor(+sequences[3] * 255).toString(16) : null;
 
   if (r.length === 1) r = "0" + r;
@@ -45,7 +56,12 @@ const RGBToHex = (rgb: string): number => {
   return parseInt(hex, 16);
 };
 
-const stringToColor = (color: string): number => {
+/**
+ * Converts a color represented as a string into its hexadecimal value (number).
+ * @param color The color as a string.
+ * @returns {number} The hexadecimal value.
+ */
+export const stringToColor = (color: string): number => {
   color = color.trim();
   if (color.startsWith("#")) return parseInt(color.substring(1), 16);
   if (color.startsWith("rgb")) return RGBToHex(color);
@@ -112,6 +128,17 @@ const usePixelArt = (
     });
   }, []);
 
+  const applyGrid = useCallback(
+    (grid: Grid) => {
+      for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+          paintPixel({ gridUID: pixelArt.uid, pos: { x, y } }, grid[y][x]);
+        }
+      }
+    },
+    [paintPixel, pixelArt.uid]
+  );
+
   const fillLine = useCallback(
     (color: number | string, line: number) => {
       const uid = pixelArt.uid;
@@ -151,7 +178,15 @@ const usePixelArt = (
   return [
     pixelArt,
     { width, height, pxSize, initialColor, gridUID: pixelArt.uid },
-    { paintPixel, resetGrid, fillColumn, fillLine, fillGrid },
+    {
+      paintPixel,
+      resetGrid,
+      fillColumn,
+      fillLine,
+      fillGrid,
+      applyGrid,
+      registry: new PixelArtRegistry(pixelArt.grid, applyGrid),
+    },
   ];
 };
 
