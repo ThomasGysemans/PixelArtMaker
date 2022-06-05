@@ -45,7 +45,9 @@ export const RGBToHex = (rgb: string | number[]): number => {
   let r = parseInt(sequences[0] as string).toString(16),
     g = parseInt(sequences[1] as string).toString(16),
     b = parseInt(sequences[2] as string).toString(16),
-    a = isRGBA ? Math.floor(+sequences[3] * 255).toString(16) : null;
+    a = isRGBA
+      ? (+sequences[3] >= 1 ? +sequences[3] : Math.floor(+sequences[3] * 255)).toString(16)
+      : null;
 
   if (r.length === 1) r = "0" + r;
   if (g.length === 1) g = "0" + g;
@@ -132,6 +134,9 @@ const usePixelArt = (
     (grid: Grid) => {
       for (let y = 0; y < grid.length; y++) {
         for (let x = 0; x < grid[y].length; x++) {
+          console.log(
+            `painting (${x};${y}) is of color ${grid[y][x]} (#${grid[y][x].toString(16)}))`
+          );
           paintPixel({ gridUID: pixelArt.uid, pos: { x, y } }, grid[y][x]);
         }
       }
