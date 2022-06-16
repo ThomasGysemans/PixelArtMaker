@@ -4,7 +4,7 @@ interface PixelArtConfig {
   width: number;
   height: number;
   pxSize: number;
-  initialColor?: number;
+  initialColor?: string;
   gridUID: string;
 }
 
@@ -23,7 +23,7 @@ interface PixelProps {
   x: number;
   y: number;
   size: number;
-  color: number; // hexadecimal
+  color: string; // hexadecimal
   gridUID: string;
   onClick: (data: PixelData) => void;
   onPixelDrawn: () => void;
@@ -32,6 +32,8 @@ interface PixelProps {
 interface PixelArt {
   grid: Grid;
   uid: string;
+  width: number;
+  height: number;
 }
 
 interface RegistryState {
@@ -39,4 +41,4 @@ interface RegistryState {
   actionDescription: string;
 }
 
-type Grid = number[][];
+type Grid = string[][];

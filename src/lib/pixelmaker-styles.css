@@ -30,17 +30,17 @@
 
 .pxm-line {
   display: flex;
-  border-top: 1px solid #ddd;
-  border-left: 1px solid #ddd;
-  border-right: 1px solid #ddd;
+  border-top: 0.5px solid rgba(221, 221, 221, 0.3);
+  border-left: 0.5px solid rgba(221, 221, 221, 0.3);
+  border-right: 0.5px solid rgba(221, 221, 221, 0.3);
 }
 
 .pxm .pxm-last-line {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 0.5px solid rgba(221, 221, 221, 0.3);
 }
 
 .pxm-pixel {
-  border-right: 1px solid #ddd;
+  border-right: 0.5px solid rgba(221, 221, 221, 0.3);
   width: 25px;
   height: 25px;
   margin: 0;

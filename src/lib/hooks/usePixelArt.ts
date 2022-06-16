@@ -5,12 +5,14 @@ type PixelArtHook = [
   PixelArt,
   PixelArtConfig,
   {
-    paintPixel: (pixelData: PixelData, newColor: number) => void;
+    paintPixel: (pixelData: PixelData, newColor: string) => void;
     resetGrid: () => void;
-    fillLine: (color: number, line: number) => void;
-    fillColumn: (color: number, column: number) => void;
-    fillGrid: (color: number) => void;
+    fillLine: (color: string, line: number) => void;
+    fillColumn: (color: string, column: number) => void;
+    fillGrid: (color: string) => void;
     applyGrid: (grid: Grid) => void;
+    createPNG: () => void;
+    loadPNG: (fileInput: React.MutableRefObject<HTMLInputElement | null>) => void;
     registry: PixelArtRegistry;
   }
 ];
@@ -79,8 +81,8 @@ const generateRandomUID = () => {
   return uid;
 };
 
-const init = (w: number, h: number, c: number): PixelArt => {
-  let grid: number[][] = [];
+const init = (w: number, h: number, c: string): PixelArt => {
+  let grid: string[][] = [];
   let uid = generateRandomUID();
   for (let y = 0; y < h; y++) {
     grid[y] = [];
@@ -88,7 +90,7 @@ const init = (w: number, h: number, c: number): PixelArt => {
       grid[y][x] = c;
     }
   }
-  return { uid, grid };
+  return { uid, grid, width: w, height: h };
 };
 
 const getHTMLElement = (pos: Pos, uid: string): HTMLDivElement | null => {
@@ -108,14 +110,14 @@ const usePixelArt = (
   width = 16,
   height = 16,
   pxSize = 25,
-  initialColor = 0xffffffff
+  initialColor = "ffffffff"
 ): PixelArtHook => {
   const [pixelArt, setPixelArt] = useState<PixelArt>(init(width, height, initialColor));
 
-  const paintPixel = useCallback((pixelData: PixelData, newColor: number | string) => {
+  const paintPixel = useCallback((pixelData: PixelData, newColor: string) => {
     setPixelArt((currentGrid) => {
       const pos = pixelData.pos;
-      const newStringColor = "#" + newColor.toString(16);
+      const newStringColor = !newColor.startsWith("#") ? "#" + newColor : newColor;
       const htmlElement = getHTMLElement(pos, pixelData.gridUID);
       if (htmlElement == null) {
         throw new Error(
@@ -124,8 +126,7 @@ const usePixelArt = (
       }
       htmlElement.setAttribute("data-hexc", newStringColor);
       htmlElement.style.backgroundColor = newStringColor;
-      currentGrid.grid[pos.y][pos.x] =
-        typeof newColor === "string" ? stringToColor(newColor) : newColor;
+      currentGrid.grid[pos.y][pos.x] = newColor;
       return currentGrid;
     });
   }, []);
@@ -134,9 +135,6 @@ const usePixelArt = (
     (grid: Grid) => {
       for (let y = 0; y < grid.length; y++) {
         for (let x = 0; x < grid[y].length; x++) {
-          console.log(
-            `painting (${x};${y}) is of color ${grid[y][x]} (#${grid[y][x].toString(16)}))`
-          );
           paintPixel({ gridUID: pixelArt.uid, pos: { x, y } }, grid[y][x]);
         }
       }
@@ -145,7 +143,7 @@ const usePixelArt = (
   );
 
   const fillLine = useCallback(
-    (color: number | string, line: number) => {
+    (color: string, line: number) => {
       const uid = pixelArt.uid;
       for (let i = 0; i < width; i++) {
         paintPixel({ gridUID: uid, pos: { x: line, y: i } }, color);
@@ -155,7 +153,7 @@ const usePixelArt = (
   );
 
   const fillColumn = useCallback(
-    (color: number | string, column: number) => {
+    (color: string, column: number) => {
       const uid = pixelArt.uid;
       for (let i = 0; i < width; i++) {
         paintPixel({ gridUID: uid, pos: { x: i, y: column } }, color);
@@ -165,7 +163,7 @@ const usePixelArt = (
   );
 
   const fillGrid = useCallback(
-    (color: number | string) => {
+    (color: string) => {
       const uid = pixelArt.uid;
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -180,6 +178,72 @@ const usePixelArt = (
     fillGrid(initialColor);
   }, [fillGrid, initialColor]);
 
+  const createPNG = useCallback(() => {
+    // Drawn the image based on the hexadecimal colors
+    const canvas = document.createElement("canvas");
+    canvas.width = pixelArt.width;
+    canvas.height = pixelArt.height;
+    const context = canvas.getContext("2d");
+    if (context) {
+      const pixSize = 1;
+      for (var i = 0; i < pixelArt.grid.length; i++) {
+        var col = pixelArt.grid[i];
+        for (var j = 0; j < col.length; j++) {
+          context.fillStyle = "#" + col[j]; // #hex format
+          context.fillRect(j * pixSize, i * pixSize, pixSize, pixSize);
+        }
+      }
+    }
+    // Get the URL
+    const dataURL = canvas.toDataURL("image/png", 1.0);
+    // Download
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", dataURL);
+    anchor.setAttribute("download", dataURL);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }, [pixelArt]);
+
+  // Called onChange for input:file
+  const loadPNG = useCallback(
+    (fileInput: React.MutableRefObject<HTMLInputElement | null>) => {
+      if (fileInput.current == null) return;
+      if (fileInput.current.files == null) return;
+      if (fileInput.current.files[0] == null) return;
+      const file: File = fileInput.current!.files![0];
+      const image = new Image();
+      image.src = URL.createObjectURL(file);
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext("2d");
+        if (context) {
+          context.drawImage(image, 0, 0, image.width, image.height);
+          const imageData = context.getImageData(0, 0, image.width, image.height);
+          const getPixel = (imgData: ImageData, index: number) => {
+            const i = index * 4;
+            const d = imgData.data;
+            return [d[i], d[i + 1], d[i + 2], d[i + 3]]; // Returns array [R,G,B,A]
+          };
+          // The hexadecimal values of the colors ordered in a grid
+          // where each value is a pixel.
+          let grid: string[][] = [];
+          for (let y = 0; y < imageData.height; y++) {
+            grid[y] = [];
+            for (let px = 0; px < imageData.width; px++) {
+              let pixelIndex = y * imageData.width + px;
+              grid[y][px] = RGBToHex(getPixel(imageData, pixelIndex)).toString(16);
+            }
+          }
+          applyGrid(grid);
+        }
+      };
+    },
+    [applyGrid]
+  );
+
   return [
     pixelArt,
     { width, height, pxSize, initialColor, gridUID: pixelArt.uid },
@@ -190,6 +254,8 @@ const usePixelArt = (
       fillLine,
       fillGrid,
       applyGrid,
+      createPNG,
+      loadPNG,
       registry: new PixelArtRegistry(pixelArt.grid, applyGrid),
     },
   ];

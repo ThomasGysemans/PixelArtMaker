@@ -127,7 +127,7 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
 };
 
 const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick, onPixelDrawn }) => {
-  const hexc = "#" + color.toString(16);
+  const hexc = "#" + color;
 
   return (
     <div
