@@ -16,14 +16,14 @@ interface Pos {
 interface PixelData {
   gridUID: string;
   pos: Pos;
-  hexColor?: string;
+  hexColor?: string | null;
 }
 
 interface PixelProps {
   x: number;
   y: number;
   size: number;
-  color: string; // hexadecimal
+  color: string | null; // hexadecimal
   gridUID: string;
   onClick: (data: PixelData) => void;
   onPixelDrawn: () => void;
@@ -41,4 +41,4 @@ interface RegistryState {
   actionDescription: string;
 }
 
-type Grid = string[][];
+type Grid = (string | null)[][];

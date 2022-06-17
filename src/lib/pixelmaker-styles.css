@@ -30,17 +30,9 @@
 
 .pxm-line {
   display: flex;
-  border-top: 0.5px solid rgba(221, 221, 221, 0.3);
-  border-left: 0.5px solid rgba(221, 221, 221, 0.3);
-  border-right: 0.5px solid rgba(221, 221, 221, 0.3);
-}
-
-.pxm .pxm-last-line {
-  border-bottom: 0.5px solid rgba(221, 221, 221, 0.3);
 }
 
 .pxm-pixel {
-  border-right: 0.5px solid rgba(221, 221, 221, 0.3);
   width: 25px;
   height: 25px;
   margin: 0;
@@ -48,6 +40,12 @@
   box-sizing: border-box;
   cursor: pointer;
   user-select: none;
+  background-color: #cbcfd0;
+}
+
+.pxm-line:nth-child(odd) .pxm-pixel:nth-child(odd),
+.pxm-line:nth-child(even) .pxm-pixel:nth-child(even) {
+  background-color: #fff;
 }
 
 .pxm-pixel:last-child {

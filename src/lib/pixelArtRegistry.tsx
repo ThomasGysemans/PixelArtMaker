@@ -27,7 +27,6 @@ class PixelArtRegistry {
     }
     this.states[index] = { grid: this.copy(grid), actionDescription };
     this.currentState = index;
-    console.log("this.states =", this.states);
   }
 
   /**

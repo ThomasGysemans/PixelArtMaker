@@ -81,13 +81,13 @@ const generateRandomUID = () => {
   return uid;
 };
 
-const init = (w: number, h: number, c: string): PixelArt => {
-  let grid: string[][] = [];
+const init = (w: number, h: number, c?: string): PixelArt => {
+  let grid: Grid = [];
   let uid = generateRandomUID();
   for (let y = 0; y < h; y++) {
     grid[y] = [];
     for (let x = 0; x < w; x++) {
-      grid[y][x] = c;
+      grid[y][x] = c === undefined ? null : c;
     }
   }
   return { uid, grid, width: w, height: h };
@@ -106,26 +106,26 @@ const getHTMLElement = (pos: Pos, uid: string): HTMLDivElement | null => {
   return null;
 };
 
-const usePixelArt = (
-  width = 16,
-  height = 16,
-  pxSize = 25,
-  initialColor = "ffffffff"
-): PixelArtHook => {
+const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string): PixelArtHook => {
   const [pixelArt, setPixelArt] = useState<PixelArt>(init(width, height, initialColor));
 
-  const paintPixel = useCallback((pixelData: PixelData, newColor: string) => {
+  const paintPixel = useCallback((pixelData: PixelData, newColor: string | null) => {
     setPixelArt((currentGrid) => {
       const pos = pixelData.pos;
-      const newStringColor = !newColor.startsWith("#") ? "#" + newColor : newColor;
+      const newStringColor =
+        newColor === null ? null : !newColor.startsWith("#") ? "#" + newColor : newColor;
       const htmlElement = getHTMLElement(pos, pixelData.gridUID);
       if (htmlElement == null) {
         throw new Error(
           `The pixel you're trying to paint does not exist at pos (${pos.x};${pos.y}) in grid of uid "${pixelData.gridUID}".`
         );
       }
-      htmlElement.setAttribute("data-hexc", newStringColor);
-      htmlElement.style.backgroundColor = newStringColor;
+      if (newStringColor) {
+        htmlElement.setAttribute("data-hexc", newStringColor);
+      } else {
+        htmlElement.removeAttribute("data-hexc");
+      }
+      htmlElement.style.backgroundColor = newStringColor as string; // to enforce the default value to take over (which is transparent)
       currentGrid.grid[pos.y][pos.x] = newColor;
       return currentGrid;
     });
@@ -163,7 +163,7 @@ const usePixelArt = (
   );
 
   const fillGrid = useCallback(
-    (color: string) => {
+    (color: string | null) => {
       const uid = pixelArt.uid;
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -175,7 +175,7 @@ const usePixelArt = (
   );
 
   const resetGrid = useCallback(() => {
-    fillGrid(initialColor);
+    fillGrid(initialColor === undefined ? null : initialColor);
   }, [fillGrid, initialColor]);
 
   const createPNG = useCallback(() => {
@@ -189,6 +189,9 @@ const usePixelArt = (
       for (var i = 0; i < pixelArt.grid.length; i++) {
         var col = pixelArt.grid[i];
         for (var j = 0; j < col.length; j++) {
+          if (col[j] === null) {
+            continue;
+          }
           context.fillStyle = "#" + col[j]; // #hex format
           context.fillRect(j * pixSize, i * pixSize, pixSize, pixSize);
         }
@@ -229,12 +232,13 @@ const usePixelArt = (
           };
           // The hexadecimal values of the colors ordered in a grid
           // where each value is a pixel.
-          let grid: string[][] = [];
+          let grid: Grid = [];
           for (let y = 0; y < imageData.height; y++) {
             grid[y] = [];
             for (let px = 0; px < imageData.width; px++) {
-              let pixelIndex = y * imageData.width + px;
-              grid[y][px] = RGBToHex(getPixel(imageData, pixelIndex)).toString(16);
+              const pixelIndex = y * imageData.width + px;
+              const pixel = getPixel(imageData, pixelIndex);
+              grid[y][px] = pixel[3] === 0 ? null : RGBToHex(pixel).toString(16);
             }
           }
           applyGrid(grid);
