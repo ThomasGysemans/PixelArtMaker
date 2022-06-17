@@ -1,9 +1,9 @@
 import React, { useCallback, useRef, useState } from "react";
-import usePixelArt from "./lib/hooks/usePixelArt";
+import usePixelArt, { createPNG, loadPNG } from "./lib/hooks/usePixelArt";
 import PixelArtMaker from "./lib/PixelArtMaker";
 
 const App: React.FC = () => {
-  const [pixelArt, config, { paintPixel, registry, createPNG, loadPNG }] = usePixelArt(16, 16, 25);
+  const [pixelArt, config, { paintPixel, registry, applyGrid }] = usePixelArt(16, 16, 25);
   const [doPickColor, setDoPickColor] = useState<boolean>(false);
   const [color, setColor] = useState<string>("ff0000");
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -49,7 +49,12 @@ const App: React.FC = () => {
           >
             Redo
           </button>
-          <button type="button" onClick={createPNG}>
+          <button
+            type="button"
+            onClick={() => {
+              createPNG(pixelArt);
+            }}
+          >
             Download PNG
           </button>
           <button type="button" onClick={toggleColorPicker}>
@@ -64,7 +69,9 @@ const App: React.FC = () => {
           id="file"
           ref={fileInput}
           onChange={() => {
-            loadPNG(fileInput);
+            loadPNG(fileInput, (grid: Grid) => {
+              applyGrid(grid);
+            });
           }}
         />
       </div>

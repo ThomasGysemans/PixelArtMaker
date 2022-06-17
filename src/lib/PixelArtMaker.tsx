@@ -2,19 +2,27 @@ import React, { useCallback, useEffect } from "react";
 import type PixelArtRegistry from "./pixelArtRegistry";
 
 interface PixelArtProps {
-  config: PixelArtConfig;
   model: PixelArt;
+  config: PixelArtConfig;
   onClick: (data: PixelData) => void;
   roundedGrid?: boolean;
   className?: string;
   registry?: PixelArtRegistry;
 }
 
+interface GridViewProps {
+  model: PixelArt;
+  config: PixelArtConfig;
+  roundedGrid?: boolean;
+  className?: string;
+  onLoad?: () => void;
+}
+
 const displayGrid = (
   pixelArt: PixelArt,
   pxSize: number,
-  onClick: (data: PixelData) => void,
-  onPixelDrawn: () => void
+  onClick?: (data: PixelData) => void,
+  onPixelDrawn?: () => void
 ): React.ReactNode => {
   return pixelArt.grid.map((line, y) => (
     <div
@@ -126,18 +134,40 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
   );
 };
 
+// todo: test this
+export const GridView: React.FC<GridViewProps> = ({
+  config,
+  model,
+  className,
+  onLoad,
+  roundedGrid = false,
+}) => {
+  useEffect(() => {
+    onLoad?.();
+  }, [onLoad]);
+
+  return (
+    <div
+      id={config.gridUID}
+      className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
+    >
+      {displayGrid(model, config.pxSize)}
+    </div>
+  );
+};
+
 const Pixel: React.FC<PixelProps> = ({ x, y, color, size, gridUID, onClick, onPixelDrawn }) => {
   const hexc = color === null ? color : color.startsWith("#") ? color : "#" + color;
 
   return (
     <div
-      className="pxm-pixel"
+      className={"pxm-pixel " + (onClick == null ? "readonly-pixel" : "")}
       data-posx={x}
       data-posy={y}
       data-hexc={hexc}
       onClick={() => {
-        onClick({ pos: { x, y }, hexColor: hexc, gridUID });
-        onPixelDrawn();
+        onClick?.({ pos: { x, y }, hexColor: hexc, gridUID });
+        onPixelDrawn?.();
       }}
       style={{
         width: size.toString() + "px",

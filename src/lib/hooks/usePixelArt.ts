@@ -11,8 +11,6 @@ type PixelArtHook = [
     fillColumn: (color: string, column: number) => void;
     fillGrid: (color: string) => void;
     applyGrid: (grid: Grid) => void;
-    createPNG: () => void;
-    loadPNG: (fileInput: React.MutableRefObject<HTMLInputElement | null>) => void;
     registry: PixelArtRegistry;
   }
 ];
@@ -70,6 +68,79 @@ export const stringToColor = (color: string): number => {
   if (color.startsWith("#")) return parseInt(color.substring(1), 16);
   if (color.startsWith("rgb")) return RGBToHex(color);
   throw new Error(`The color "${color}" is not supported.`);
+};
+
+// Called onChange for input:file
+export const loadPNG = (
+  imageSrc: React.MutableRefObject<HTMLInputElement | null> | string,
+  callback: (grid: Grid) => void
+) => {
+  const image = new Image();
+  if (typeof imageSrc !== "string") {
+    if (imageSrc.current == null) return;
+    if (imageSrc.current.files == null) return;
+    if (imageSrc.current.files[0] == null) return;
+    image.src = URL.createObjectURL(imageSrc.current!.files![0]);
+  } else {
+    image.src = imageSrc;
+  }
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.drawImage(image, 0, 0, image.width, image.height);
+      const imageData = context.getImageData(0, 0, image.width, image.height);
+      const getPixel = (imgData: ImageData, index: number) => {
+        const i = index * 4;
+        const d = imgData.data;
+        return [d[i], d[i + 1], d[i + 2], d[i + 3]]; // Returns array [R,G,B,A]
+      };
+      // The hexadecimal values of the colors ordered in a grid
+      // where each value is a pixel.
+      let grid: Grid = [];
+      for (let y = 0; y < imageData.height; y++) {
+        grid[y] = [];
+        for (let px = 0; px < imageData.width; px++) {
+          const pixelIndex = y * imageData.width + px;
+          const pixel = getPixel(imageData, pixelIndex);
+          grid[y][px] = pixel[3] === 0 ? null : RGBToHex(pixel).toString(16);
+        }
+      }
+      callback(grid);
+    }
+  };
+};
+
+export const createPNG = (pixelArt: PixelArt) => {
+  // Drawn the image based on the hexadecimal colors
+  const canvas = document.createElement("canvas");
+  canvas.width = pixelArt.width;
+  canvas.height = pixelArt.height;
+  const context = canvas.getContext("2d");
+  if (context) {
+    const pixSize = 1;
+    for (var i = 0; i < pixelArt.grid.length; i++) {
+      var col = pixelArt.grid[i];
+      for (var j = 0; j < col.length; j++) {
+        if (col[j] === null) {
+          continue;
+        }
+        context.fillStyle = "#" + col[j]; // #hex format
+        context.fillRect(j * pixSize, i * pixSize, pixSize, pixSize);
+      }
+    }
+  }
+  // Get the URL
+  const dataURL = canvas.toDataURL("image/png", 1.0);
+  // Download
+  const anchor = document.createElement("a");
+  anchor.setAttribute("href", dataURL);
+  anchor.setAttribute("download", "pixelart");
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 };
 
 const generateRandomUID = () => {
@@ -178,76 +249,6 @@ const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string
     fillGrid(initialColor === undefined ? null : initialColor);
   }, [fillGrid, initialColor]);
 
-  const createPNG = useCallback(() => {
-    // Drawn the image based on the hexadecimal colors
-    const canvas = document.createElement("canvas");
-    canvas.width = pixelArt.width;
-    canvas.height = pixelArt.height;
-    const context = canvas.getContext("2d");
-    if (context) {
-      const pixSize = 1;
-      for (var i = 0; i < pixelArt.grid.length; i++) {
-        var col = pixelArt.grid[i];
-        for (var j = 0; j < col.length; j++) {
-          if (col[j] === null) {
-            continue;
-          }
-          context.fillStyle = "#" + col[j]; // #hex format
-          context.fillRect(j * pixSize, i * pixSize, pixSize, pixSize);
-        }
-      }
-    }
-    // Get the URL
-    const dataURL = canvas.toDataURL("image/png", 1.0);
-    // Download
-    const anchor = document.createElement("a");
-    anchor.setAttribute("href", dataURL);
-    anchor.setAttribute("download", dataURL);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-  }, [pixelArt]);
-
-  // Called onChange for input:file
-  const loadPNG = useCallback(
-    (fileInput: React.MutableRefObject<HTMLInputElement | null>) => {
-      if (fileInput.current == null) return;
-      if (fileInput.current.files == null) return;
-      if (fileInput.current.files[0] == null) return;
-      const file: File = fileInput.current!.files![0];
-      const image = new Image();
-      image.src = URL.createObjectURL(file);
-      image.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const context = canvas.getContext("2d");
-        if (context) {
-          context.drawImage(image, 0, 0, image.width, image.height);
-          const imageData = context.getImageData(0, 0, image.width, image.height);
-          const getPixel = (imgData: ImageData, index: number) => {
-            const i = index * 4;
-            const d = imgData.data;
-            return [d[i], d[i + 1], d[i + 2], d[i + 3]]; // Returns array [R,G,B,A]
-          };
-          // The hexadecimal values of the colors ordered in a grid
-          // where each value is a pixel.
-          let grid: Grid = [];
-          for (let y = 0; y < imageData.height; y++) {
-            grid[y] = [];
-            for (let px = 0; px < imageData.width; px++) {
-              const pixelIndex = y * imageData.width + px;
-              const pixel = getPixel(imageData, pixelIndex);
-              grid[y][px] = pixel[3] === 0 ? null : RGBToHex(pixel).toString(16);
-            }
-          }
-          applyGrid(grid);
-        }
-      };
-    },
-    [applyGrid]
-  );
-
   return [
     pixelArt,
     { width, height, pxSize, initialColor, gridUID: pixelArt.uid },
@@ -258,8 +259,6 @@ const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string
       fillLine,
       fillGrid,
       applyGrid,
-      createPNG,
-      loadPNG,
       registry: new PixelArtRegistry(pixelArt.grid, applyGrid),
     },
   ];

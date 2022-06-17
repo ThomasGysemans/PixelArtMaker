@@ -25,8 +25,8 @@ interface PixelProps {
   size: number;
   color: string | null; // hexadecimal
   gridUID: string;
-  onClick: (data: PixelData) => void;
-  onPixelDrawn: () => void;
+  onClick?: (data: PixelData) => void;
+  onPixelDrawn?: () => void;
 }
 
 interface PixelArt {
