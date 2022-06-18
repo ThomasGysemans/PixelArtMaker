@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import {useCallback, useReducer, useState} from "react";
 import PixelArtRegistry from "../pixelArtRegistry";
+import type React from "react";
 
 type PixelArtHook = [
   PixelArt,
-  PixelArtConfig,
+  React.Dispatch<React.SetStateAction<PixelArt>>,
   {
     paintPixel: (pixelData: PixelData, newColor: string) => void;
     resetGrid: () => void;
@@ -11,6 +12,11 @@ type PixelArtHook = [
     fillColumn: (color: string, column: number) => void;
     fillGrid: (color: string) => void;
     applyGrid: (grid: Grid) => void;
+    setDimensions: (
+      width: number | null,
+      height: number | null,
+      callback?: (model: PixelArt) => void
+    ) => void;
     registry: PixelArtRegistry;
   }
 ];
@@ -24,9 +30,9 @@ const getRandomInt = (min: number, max: number) => {
 /**
  * Converts RGB or RGBA into its hexadecimal value.
  * @param {string} rgb The string in the RGB or RGBA format.
- * @returns {number} The hexadecimal value as a number.
+ * @returns {string} The hexadecimal value as a number.
  */
-export const RGBToHex = (rgb: string | number[]): number => {
+export const RGBToHex = (rgb: string | number[]): string => {
   // Choose correct separator
   rgb = typeof rgb === "string" ? rgb.trim() : rgb;
   const sep = typeof rgb === "string" ? (rgb.indexOf(",") > -1 ? "," : " ") : null;
@@ -55,25 +61,13 @@ export const RGBToHex = (rgb: string | number[]): number => {
   if (a?.length === 1) a = "0" + a;
 
   const hex = r + g + b + (isRGBA ? a : "");
-  return parseInt(hex, 16);
-};
-
-/**
- * Converts a color represented as a string into its hexadecimal value (number).
- * @param color The color as a string.
- * @returns {number} The hexadecimal value.
- */
-export const stringToColor = (color: string): number => {
-  color = color.trim();
-  if (color.startsWith("#")) return parseInt(color.substring(1), 16);
-  if (color.startsWith("rgb")) return RGBToHex(color);
-  throw new Error(`The color "${color}" is not supported.`);
+  return hex;
 };
 
 // Called onChange for input:file
 export const loadPNG = (
   imageSrc: React.MutableRefObject<HTMLInputElement | null> | string,
-  callback: (grid: Grid) => void
+  callback: (grid: Grid, width: number, height: number) => void
 ) => {
   const image = new Image();
   if (typeof imageSrc !== "string") {
@@ -105,10 +99,10 @@ export const loadPNG = (
         for (let px = 0; px < imageData.width; px++) {
           const pixelIndex = y * imageData.width + px;
           const pixel = getPixel(imageData, pixelIndex);
-          grid[y][px] = pixel[3] === 0 ? null : RGBToHex(pixel).toString(16);
+          grid[y][px] = pixel[3] === 0 ? null : RGBToHex(pixel);
         }
       }
-      callback(grid);
+      callback(grid, image.width, image.height);
     }
   };
 };
@@ -152,7 +146,7 @@ const generateRandomUID = () => {
   return uid;
 };
 
-const init = (w: number, h: number, c?: string): PixelArt => {
+const init = (w: number, h: number, c?: string): PixelArtInitialisation => {
   let grid: Grid = [];
   let uid = generateRandomUID();
   for (let y = 0; y < h; y++) {
@@ -178,7 +172,11 @@ const getHTMLElement = (pos: Pos, uid: string): HTMLDivElement | null => {
 };
 
 const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string): PixelArtHook => {
-  const [pixelArt, setPixelArt] = useState<PixelArt>(init(width, height, initialColor));
+  const [pixelArt, setPixelArt] = useState<PixelArt>({
+    ...init(width, height, initialColor),
+    pxSize,
+  });
+  const [_, forceUpdate] = useReducer(x => x + 1, 0);
 
   const paintPixel = useCallback((pixelData: PixelData, newColor: string | null) => {
     setPixelArt((currentGrid) => {
@@ -249,9 +247,31 @@ const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string
     fillGrid(initialColor === undefined ? null : initialColor);
   }, [fillGrid, initialColor]);
 
+  const setDimensions = useCallback((width: number | null, height: number | null) => {
+    setPixelArt((v) => {
+      if (width !== null) v.width = width;
+      if (height !== null) v.height = height;
+      let newGrid: Grid = [];
+      for (let y = 0; y < v.height; y++) {
+        newGrid[y] = [];
+        for (let x = 0; x < v.width; x++) {
+          let currentElement: string | null = null;
+          if (v.grid[y] !== undefined && v.grid[y][x] !== undefined) {
+            currentElement = v.grid[y][x];
+          }
+          newGrid[y][x] = currentElement;
+        }
+      }
+      v.grid = newGrid;
+      return v;
+    });
+    // this is necessary, don't ask me why
+    // forceUpdate();
+  }, []);
+
   return [
     pixelArt,
-    { width, height, pxSize, initialColor, gridUID: pixelArt.uid },
+    setPixelArt,
     {
       paintPixel,
       resetGrid,
@@ -259,6 +279,7 @@ const usePixelArt = (width = 16, height = 16, pxSize = 25, initialColor?: string
       fillLine,
       fillGrid,
       applyGrid,
+      setDimensions,
       registry: new PixelArtRegistry(pixelArt.grid, applyGrid),
     },
   ];

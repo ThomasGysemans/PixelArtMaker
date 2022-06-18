@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect } from "react";
+import {useCallback, useEffect} from "react";
 import type PixelArtRegistry from "./pixelArtRegistry";
+import type React from "react";
 
 interface PixelArtProps {
   model: PixelArt;
-  config: PixelArtConfig;
   onClick: (data: PixelData) => void;
   roundedGrid?: boolean;
   className?: string;
@@ -12,7 +12,6 @@ interface PixelArtProps {
 
 interface GridViewProps {
   model: PixelArt;
-  config: PixelArtConfig;
   roundedGrid?: boolean;
   className?: string;
   onLoad?: () => void;
@@ -46,7 +45,6 @@ const displayGrid = (
 };
 
 const PixelArtMaker: React.FC<PixelArtProps> = ({
-  config,
   model,
   onClick,
   roundedGrid = false,
@@ -126,17 +124,15 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
 
   return (
     <div
-      id={config.gridUID}
+      id={model.uid}
       className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
     >
-      {displayGrid(model, config.pxSize, onClick, onPixelDrawn)}
+      {displayGrid(model, model.pxSize, onClick, onPixelDrawn)}
     </div>
   );
 };
 
-// todo: test this
 export const GridView: React.FC<GridViewProps> = ({
-  config,
   model,
   className,
   onLoad,
@@ -148,10 +144,10 @@ export const GridView: React.FC<GridViewProps> = ({
 
   return (
     <div
-      id={config.gridUID}
+      id={model.uid}
       className={"pxm " + (roundedGrid ? "pxm-rounded " : "") + (className ?? "")}
     >
-      {displayGrid(model, config.pxSize)}
+      {displayGrid(model, model.pxSize)}
     </div>
   );
 };

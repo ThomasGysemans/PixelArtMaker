@@ -34,6 +34,14 @@ interface PixelArt {
   uid: string;
   width: number;
   height: number;
+  pxSize: number;
+}
+
+interface PixelArtInitialisation {
+  grid: Grid;
+  uid: string;
+  width: number;
+  height: number;
 }
 
 interface RegistryState {

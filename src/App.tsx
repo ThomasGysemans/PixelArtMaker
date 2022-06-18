@@ -1,9 +1,11 @@
-import React, { useCallback, useRef, useState } from "react";
-import usePixelArt, { createPNG, loadPNG } from "./lib/hooks/usePixelArt";
+import {useCallback, useRef, useState} from "react";
+import usePixelArt, {createPNG, loadPNG} from "./lib/hooks/usePixelArt";
 import PixelArtMaker from "./lib/PixelArtMaker";
 
+import type React from "react";
+
 const App: React.FC = () => {
-  const [pixelArt, config, { paintPixel, registry, applyGrid }] = usePixelArt(16, 16, 25);
+  const [pixelArt, setPixelArt, { paintPixel, registry, applyGrid, setDimensions }] = usePixelArt(8, 8, 30);
   const [doPickColor, setDoPickColor] = useState<boolean>(false);
   const [color, setColor] = useState<string>("ff0000");
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -17,8 +19,9 @@ const App: React.FC = () => {
       if (doPickColor) {
         if (data.hexColor) {
           setColor(data.hexColor);
-          return toggleColorPicker();
+          toggleColorPicker();
         }
+        return;
       }
       paintPixel(data, color);
     },
@@ -28,12 +31,7 @@ const App: React.FC = () => {
   return (
     <>
       <div>
-        <PixelArtMaker
-          config={config}
-          model={pixelArt}
-          onClick={onPixelClick}
-          registry={registry}
-        />
+        <PixelArtMaker model={pixelArt} onClick={onPixelClick} registry={registry} />
         <div>
           <button
             onClick={() => {
@@ -69,8 +67,11 @@ const App: React.FC = () => {
           id="file"
           ref={fileInput}
           onChange={() => {
-            loadPNG(fileInput, (grid: Grid) => {
-              applyGrid(grid);
+            loadPNG(fileInput, (grid: Grid, width: number, height: number) => {
+              if (width !== pixelArt.width || height !== pixelArt.height) {
+                setDimensions(width, height);
+              }
+              setPixelArt((v) => ({...v, grid}));
             });
           }}
         />
