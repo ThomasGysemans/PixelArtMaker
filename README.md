@@ -4,7 +4,7 @@ A way to draw textures pixel by pixel with React.
 
 Project written in `TypeScript`.
 
-This README is for version `0.0.1`. Breaking changes will happen.
+This README is for version `1.0.0`. Breaking changes may happen.
 
 ## Getting started
 
@@ -28,6 +28,8 @@ This grid is a transparent picture of 4x4 with a red diagonal. We use `null` for
 For transparent colors, add 2 hexadecimals digits after the color. For example, a red color with 50% of opacity will be:
 
 ```typescript
+import RGBToHex from "./lib/utils/RGBToHex";
+
 const reddishColor: string = RGBToHex("rgba(255, 0, 0, 0.5)");
 // reddishColor = "ff00007f"
 
@@ -43,21 +45,23 @@ Use the component `PixelArtMaker` to allow modifications on the grid by the user
 ```typescript jsx
 import PixelArtMaker from "./lib/PixelArtMaker";
 import usePixelArt from "./lib/hooks/usePixelArt";
+import useRegistry from "./lib/hooks/useRegistry";
 import {useCallback} from "react";
 
 export const myComponent = () => {
     // usePixelArt(width:number, height:number, pixelSize:number, initialColor?:string)
     // On this example, we'll generate a grid 16x16 where each "pixel" is a square of 25 pixels length (css side) entirely red.
     // By default, if no initial color is specified, the grid will be transparent
-    const [pixelArt, setPixelArt, {paintPixel, registry}] = usePixelArt(16, 16, 25, "ff0000");
+    const [pixelArt, setPixelArt, {paintPixel, applyGrid}] = usePixelArt(16, 16, 25, "00ff00");
+    const registry = useRegistry(pixelArt.grid, applyGrid);
     const [doPickColor, setDoPickColor] = useState<boolean>(false);
     const [color, setColor] = useState<string>("ff0000");
 
     const toggleColorPicker = useCallback(() => {
         setDoPickColor((v) => !v);
     }, []);
-    
-    const onPixelClicked = useCallback((data:PixelData) => {
+
+    const onPixelClicked = useCallback((data: PixelData) => {
         // Create your own feature to pick the color from a pixel
         if (doPickColor) {
             if (data.hexColor) {
@@ -67,10 +71,10 @@ export const myComponent = () => {
             return;
         }
         paintPixel(data, color);
-    }, []);
-    
+    }, [color, doPickColor, paintPixel, toggleColorPicker]);
+
     return <div>
-        <PixelArtMaker model={pixelArt} onClick={onPixelClicked} registry={registry} />
+        <PixelArtMaker model={pixelArt} onClick={onPixelClicked} registry={registry}/>
         <div>
             <button type="button" onClick={toggleColorPicker}>
                 Toggle pick color ({doPickColor ? "on" : "off"})
@@ -92,13 +96,30 @@ interface PixelArtProps {
 }
 ```
 
-From the registry associated to a pixel art, you can use 4 public methods:
+From the registry associated to a pixel art (which is not mandatory), you can use 5 methods:
 
+- `registerState(grid:Grid, actionDescription:string, index?:number):void`
 - `canUndo():boolean`
 - `canRedo():boolean`
 - `undo():void`
 - `redo():void`
 - `resetStatesOnCurrentOne():void`
+
+Each state of the registry needs a description from `RegistryActions`:
+
+```typescript
+// default import from lib/utils/RegistryActions.ts
+class RegistryActions {
+    public static readonly drawnPixel = "drawn pixel";
+    public static readonly fillGrid = "filled grid";
+    public static readonly fillLine = "filled line";
+    public static readonly fillColumn = "filled column";
+    public static readonly reset = "reset grid";
+    public static readonly init = "init grid";
+    public static readonly multipleDrawnPixels = "multiple drawn pixels";
+    public static readonly pngLoaded = "png was loaded";
+}
+```
 
 To manipulate the grid, use the methods available via `usePixelArt` hook. Here is a list of the methods:
 
@@ -110,8 +131,7 @@ To manipulate the grid, use the methods available via `usePixelArt` hook. Here i
 - `applyGrid: (grid: Grid) => void`
 - `setDimensions: (
     width: number | null, 
-    height: number | null, 
-    callback?: (model: PixelArt) => void
+    height: number | null
   ) => void`
 
 ## Readonly grid
@@ -134,16 +154,23 @@ The whole point behind this project was to create two methods. One to load a PNG
 Here's the methods to do that:
 
 ```typescript
+// default import from lib/utils/loadPNG
 function loadPNG(
     imageSrc:React.MutableRefObject<HTMLInputElement | null> | string,
     callback: (grid: Grid, width: number, height: number) => void
 ): void {
-    // here the magic happens
+    // here the magic happens...
+    // the loading of the image takes time so we must use a callback.
 };
 
-function createPNG(pixelArt:PixelArt): void {
-    // here the magic happens
-    // the download of the PNG will start automatically
+// default import from lib/utils/createPNG
+function createPNG(
+    pixelArt:PixelArt,
+    startDownloadAutomatically:boolean = true,
+    fileName:string = "pixelart"
+): string {
+    // here the magic happens...
+    // it will return the data URL used for the download
 };
 ```
 
@@ -159,10 +186,15 @@ const fileInput = useRef<HTMLInputElement | null>(null);
   ref={fileInput}
   onChange={() => {
     loadPNG(fileInput, (grid: Grid, width: number, height: number) => {
+      // In case the imported image does not match the width and height of the grid
+      // we can change the dimensions of the grid with `setDimensions(width:number|null, height:number|null):void`  
       if (width !== pixelArt.width || height !== pixelArt.height) {
         setDimensions(width, height);
       }
+      // You must apply the new grid via setPixelArt() to ensure the changes will be applied on your whole component.
       setPixelArt((v) => ({...v, grid}));
+      // if you `useRegistry`
+      registry.registerState(grid, RegistryActions.pngLoaded);
     });
   }}
 />
@@ -173,6 +205,5 @@ const fileInput = useRef<HTMLInputElement | null>(null);
 I'm far from being the best react developer out there, so I'd highly appreciate some help to improve performance.
 
 ## License
-
 
 MIT License

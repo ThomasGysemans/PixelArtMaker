@@ -1,11 +1,16 @@
 import {useCallback, useRef, useState} from "react";
-import usePixelArt, {createPNG, loadPNG} from "./lib/hooks/usePixelArt";
+import usePixelArt from "./lib/hooks/usePixelArt";
 import PixelArtMaker from "./lib/PixelArtMaker";
+import useRegistry from "./lib/hooks/useRegistry";
+import createPNG from "./lib/utils/createPNG";
+import loadPNG from "./lib/utils/loadPNG";
+import RegistryActions from "./lib/utils/RegistryActions";
 
 import type React from "react";
 
 const App: React.FC = () => {
-  const [pixelArt, setPixelArt, { paintPixel, registry, applyGrid, setDimensions }] = usePixelArt(8, 8, 30);
+  const [pixelArt, setPixelArt, { paintPixel, applyGrid, setDimensions }] = usePixelArt(16, 16, 30);
+  const registry = useRegistry(pixelArt.grid, applyGrid);
   const [doPickColor, setDoPickColor] = useState<boolean>(false);
   const [color, setColor] = useState<string>("ff0000");
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -72,6 +77,7 @@ const App: React.FC = () => {
                 setDimensions(width, height);
               }
               setPixelArt((v) => ({...v, grid}));
+              registry.registerState(grid, RegistryActions.pngLoaded);
             });
           }}
         />

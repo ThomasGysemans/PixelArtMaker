@@ -1,5 +1,5 @@
 import {useCallback, useEffect} from "react";
-import type PixelArtRegistry from "./pixelArtRegistry";
+import RegistryActions from "./utils/RegistryActions";
 import type React from "react";
 
 interface PixelArtProps {
@@ -52,11 +52,11 @@ const PixelArtMaker: React.FC<PixelArtProps> = ({
   registry,
 }) => {
   const onPixelDrawn = useCallback(() => {
-    registry?.registerState(model.grid, registry.ACTIONS.drawnPixel);
+    registry?.registerState(model.grid, RegistryActions.drawnPixel);
   }, [model.grid, registry]);
 
   const onPixelsDrawnOnMouseDown = useCallback(() => {
-    registry?.registerState(model.grid, registry.ACTIONS.multipleDrawnPixels);
+    registry?.registerState(model.grid, RegistryActions.multipleDrawnPixels);
   }, [model.grid, registry]);
 
   useEffect(() => {

@@ -1,13 +1,5 @@
 /// <reference types="react-scripts" />
 
-interface PixelArtConfig {
-  width: number;
-  height: number;
-  pxSize: number;
-  initialColor?: string;
-  gridUID: string;
-}
-
 interface Pos {
   x: number;
   y: number;
@@ -23,7 +15,7 @@ interface PixelProps {
   x: number;
   y: number;
   size: number;
-  color: string | null; // hexadecimal
+  color: string | null; // hexadecimal, null for transparent
   gridUID: string;
   onClick?: (data: PixelData) => void;
   onPixelDrawn?: () => void;
@@ -42,6 +34,16 @@ interface PixelArtInitialisation {
   uid: string;
   width: number;
   height: number;
+}
+
+interface PixelArtRegistry {
+  applyState: (index:number) => void;
+  registerState: (grid:Grid, actionDescription:string, index?:number) => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  undo: () => void;
+  redo: () => void;
+  resetStatesOnCurrentOne: () => void;
 }
 
 interface RegistryState {
